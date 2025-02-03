@@ -174,6 +174,20 @@ fn timestamptz_to_ulid(input: TimestampWithTimeZone) -> ulid {
     ulid(inner.0)
 }
 
+#[pg_extern(immutable, parallel_safe)]
+fn ulid_send(input: ulid) -> Vec<u8> {
+    let mut bytes = input.0.to_ne_bytes();
+    bytes.reverse();
+    bytes.to_vec()
+}
+
+#[pg_extern(immutable, parallel_safe)]
+fn ulid_recv(input: Vec<u8>) -> ulid {
+    let mut bytes = [0u8; 16];
+    bytes.copy_from_slice(&input);
+    ulid(u128::from_ne_bytes(bytes))
+}
+
 extension_sql!(
     r#"
 CREATE CAST (uuid AS ulid) WITH FUNCTION ulid_from_uuid(uuid) AS IMPLICIT;
